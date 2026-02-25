@@ -1,4 +1,4 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "/api";
 
 function getAuthToken() {
   return localStorage.getItem("token") || "";
@@ -18,11 +18,16 @@ async function request(path, options = {}) {
     }
   }
 
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    method,
-    headers,
-    body: body ? JSON.stringify(body) : undefined
-  });
+  let response;
+  try {
+    response = await fetch(`${API_BASE_URL}${path}`, {
+      method,
+      headers,
+      body: body ? JSON.stringify(body) : undefined
+    });
+  } catch (_networkError) {
+    throw new Error("Unable to reach server. Ensure backend is running.");
+  }
 
   const data = await response.json().catch(() => ({}));
   if (!response.ok) {
