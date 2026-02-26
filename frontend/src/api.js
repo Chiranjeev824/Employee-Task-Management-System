@@ -30,9 +30,22 @@ async function request(path, options = {}) {
     throw new Error("Unable to reach server. Ensure backend is running.");
   }
 
-  const data = await response.json().catch(() => ({}));
+  const contentType = response.headers.get("content-type") || "";
+  let data = {};
+  let rawText = "";
+
+  if (contentType.includes("application/json")) {
+    data = await response.json().catch(() => ({}));
+  } else {
+    rawText = await response.text().catch(() => "");
+  }
+
   if (!response.ok) {
-    throw new Error(data.message || "Request failed");
+    throw new Error(
+      data.message ||
+      rawText ||
+      `Request failed (${response.status}) on ${normalizedPath}`
+    );
   }
 
   return data;
@@ -69,4 +82,8 @@ export function createTask(payload) {
 
 export function fetchEmployees() {
   return request("/users/employees");
+}
+
+export function createEmployee(payload) {
+  return request("/users/employees", { method: "POST", body: payload });
 }
