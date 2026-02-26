@@ -1,4 +1,4 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "/api";
+const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || "/api").replace(/\/+$/, "");
 
 function getAuthToken() {
   return localStorage.getItem("token") || "";
@@ -6,6 +6,7 @@ function getAuthToken() {
 
 async function request(path, options = {}) {
   const { method = "GET", body, requiresAuth = true } = options;
+  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
   const headers = {
     "Content-Type": "application/json"
   };
@@ -20,7 +21,7 @@ async function request(path, options = {}) {
 
   let response;
   try {
-    response = await fetch(`${API_BASE_URL}${path}`, {
+    response = await fetch(`${API_BASE_URL}${normalizedPath}`, {
       method,
       headers,
       body: body ? JSON.stringify(body) : undefined
@@ -64,4 +65,8 @@ export function deleteTask(taskId) {
 
 export function createTask(payload) {
   return request("/tasks", { method: "POST", body: payload });
+}
+
+export function fetchEmployees() {
+  return request("/users/employees");
 }

@@ -5,6 +5,7 @@ import {
   createTask,
   deleteTask,
   fetchDashboard,
+  fetchEmployees,
   fetchTasks,
   updateTaskStatus
 } from "./api";
@@ -17,7 +18,10 @@ function App() {
   });
   const [dashboard, setDashboard] = useState(null);
   const [tasks, setTasks] = useState([]);
+  const [employees, setEmployees] = useState([]);
+  const [selectedAssignees, setSelectedAssignees] = useState([]);
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
   const [authView, setAuthView] = useState("login");
   const [createForm, setCreateForm] = useState({
@@ -41,13 +45,19 @@ function App() {
 
     setLoading(true);
     setError("");
+    setSuccess("");
     try {
-      const [dashboardData, tasksData] = await Promise.all([
-        fetchDashboard(user.role),
-        fetchTasks()
-      ]);
+      const requests = [fetchDashboard(user.role), fetchTasks()];
+      if (user.role === "admin") {
+        requests.push(fetchEmployees());
+      }
+
+      const [dashboardData, tasksData, employeesData] = await Promise.all(requests);
       setDashboard(dashboardData);
       setTasks(tasksData);
+      if (user.role === "admin") {
+        setEmployees(employeesData || []);
+      }
     } catch (err) {
       setError(err.message || "Failed to load data");
     } finally {
@@ -65,6 +75,9 @@ function App() {
     setUser(null);
     setDashboard(null);
     setTasks([]);
+    setEmployees([]);
+    setSelectedAssignees([]);
+    setSuccess("");
   }
 
   async function handleStatusChange(taskId, status) {
@@ -78,6 +91,8 @@ function App() {
 
   async function handleDelete(taskId) {
     try {
+      setError("");
+      setSuccess("");
       await deleteTask(taskId);
       setTasks(prev => prev.filter(task => task._id !== taskId));
     } catch (err) {
@@ -88,13 +103,27 @@ function App() {
   async function handleCreateTask(e) {
     e.preventDefault();
     try {
+      setError("");
+      setSuccess("");
+
+      const assignees = [...new Set(selectedAssignees.filter(Boolean))];
+
       const payload = {
         ...createForm,
-        assignedTo: createForm.assignedTo || undefined,
+        assignedTo: assignees.length === 1 ? assignees[0] : undefined,
+        assignees: assignees.length > 1 ? assignees : undefined,
         deadline: createForm.deadline || undefined
       };
+
       const created = await createTask(payload);
-      setTasks(prev => [created, ...prev]);
+      if (Array.isArray(created?.tasks)) {
+        setTasks(prev => [...created.tasks, ...prev]);
+        setSuccess(`Created ${created.count || created.tasks.length} tasks successfully.`);
+      } else {
+        setTasks(prev => [created, ...prev]);
+        setSuccess(assignees.length ? "Task assigned successfully." : "Unassigned task created successfully.");
+      }
+
       setCreateForm({
         title: "",
         description: "",
@@ -103,9 +132,19 @@ function App() {
         deadline: "",
         assignedTo: ""
       });
+      setSelectedAssignees([]);
     } catch (err) {
       setError(err.message || "Unable to create task");
     }
+  }
+
+  function handleAssigneeChange(event) {
+    const values = Array.from(event.target.selectedOptions, option => option.value);
+    setSelectedAssignees(values);
+  }
+
+  function handleAssignAllEmployees() {
+    setSelectedAssignees(employees.map(employee => employee.email));
   }
 
   if (!user) {
@@ -141,6 +180,7 @@ function App() {
       </section>
 
       {error && <section className="panel error">{error}</section>}
+      {success && <section className="panel success">{success}</section>}
 
       {dashboard && (
         <section className="dashboard-grid">
@@ -168,11 +208,24 @@ function App() {
               value={createForm.description}
               onChange={e => setCreateForm(prev => ({ ...prev, description: e.target.value }))}
             />
-            <input
-              placeholder="Assigned User ID (optional)"
-              value={createForm.assignedTo}
-              onChange={e => setCreateForm(prev => ({ ...prev, assignedTo: e.target.value }))}
-            />
+            <label>
+              Assign Employees
+              <select multiple value={selectedAssignees} onChange={handleAssigneeChange}>
+                {employees.map(employee => (
+                  <option key={employee._id} value={employee.email}>
+                    {employee.name} ({employee.email})
+                  </option>
+                ))}
+              </select>
+            </label>
+            <div className="actions">
+              <button type="button" className="btn-secondary" onClick={handleAssignAllEmployees}>
+                Assign to all employees
+              </button>
+              <button type="button" className="btn-secondary" onClick={() => setSelectedAssignees([])}>
+                Clear assignees
+              </button>
+            </div>
             <label>
               Priority
               <select

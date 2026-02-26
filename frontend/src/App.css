@@ -125,6 +125,10 @@ button {
   font: inherit;
 }
 
+select[multiple] {
+  min-height: 130px;
+}
+
 button {
   width: auto;
   cursor: pointer;
