@@ -95,11 +95,17 @@ exports.getTasks = async (req, res) => {
 // Update task status
 exports.updateTaskStatus = async (req, res) => {
   try {
-    const task = await Task.findByIdAndUpdate(
-      req.params.id,
-      { status: req.body.status },
-      { new: true }
-    );
+    const query =
+      req.user.role === "admin"
+        ? { _id: req.params.id }
+        : { _id: req.params.id, assignedTo: req.user.id };
+
+    const task = await Task.findOneAndUpdate(query, { status: req.body.status }, { new: true });
+
+    if (!task) {
+      return res.status(403).json({ message: "You can update only your assigned tasks" });
+    }
+
     res.json(task);
   } catch (error) {
     res.status(500).json({ message: error.message });
