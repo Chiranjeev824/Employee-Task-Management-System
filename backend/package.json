@@ -1,7 +1,8 @@
 {
   "scripts": {
     "start": "node server.js",
-    "dev": "node server.js"
+    "dev": "node server.js",
+    "normalize:emails": "node scripts/normalizeUserEmails.js"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",

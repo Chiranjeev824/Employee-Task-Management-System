@@ -7,8 +7,14 @@ const JWT_SECRET = process.env.JWT_SECRET || "supersecretkey";
 exports.register = async (req, res) => {
   try {
     const { name, email, password, role } = req.body;
+    const normalizedName = (name || "").trim();
+    const normalizedEmail = (email || "").trim().toLowerCase();
 
-    const userExists = await User.findOne({ email });
+    if (!normalizedName || !normalizedEmail || !password) {
+      return res.status(400).json({ message: "Name, email, and password are required" });
+    }
+
+    const userExists = await User.findOne({ email: normalizedEmail });
     if (userExists) {
       return res.status(400).json({ message: "User already exists" });
     }
@@ -16,8 +22,8 @@ exports.register = async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const user = await User.create({
-      name,
-      email,
+      name: normalizedName,
+      email: normalizedEmail,
       password: hashedPassword,
       role
     });
@@ -36,8 +42,13 @@ exports.register = async (req, res) => {
 exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
+    const normalizedEmail = (email || "").trim().toLowerCase();
 
-    const user = await User.findOne({ email });
+    if (!normalizedEmail || !password) {
+      return res.status(400).json({ message: "Email and password are required" });
+    }
+
+    const user = await User.findOne({ email: normalizedEmail });
     if (!user) {
       return res.status(400).json({ message: "Invalid credentials" });
     }

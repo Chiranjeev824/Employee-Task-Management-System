@@ -577,6 +577,79 @@ button:disabled {
   margin: 0;
 }
 
+.input-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 8px;
+}
+
+.toggle-btn {
+  width: auto;
+  padding: 9px 12px;
+  border-radius: 10px;
+  background: #eef3f8;
+  color: #1f2a37;
+  border: 1px solid #c9d7e6;
+  font-weight: 700;
+}
+
+.toggle-btn:hover {
+  background: #e4ecf5;
+}
+
+.password-meter {
+  display: grid;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.password-meter-bar {
+  height: 8px;
+  border-radius: 999px;
+  background: #e2e8f0;
+  position: relative;
+  overflow: hidden;
+}
+
+.password-meter-bar::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  width: 0%;
+  background: #94a3b8;
+}
+
+.password-meter-0::after {
+  width: 0%;
+}
+
+.password-meter-1::after {
+  width: 25%;
+  background: #dc2626;
+}
+
+.password-meter-2::after {
+  width: 50%;
+  background: #f59e0b;
+}
+
+.password-meter-3::after {
+  width: 75%;
+  background: #10b981;
+}
+
+.password-meter-4::after {
+  width: 100%;
+  background: #0ea5e9;
+}
+
+.password-meter-label {
+  font-size: 12px;
+  color: #4b5563;
+  font-weight: 700;
+}
+
 .switch-auth {
   margin: 0;
   color: #314c65;
